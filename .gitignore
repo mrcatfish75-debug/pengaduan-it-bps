@@ -1,0 +1,66 @@
+############################
+# Laravel Core
+############################
+/vendor
+/node_modules
+
+############################
+# Environment
+############################
+.env
+.env.*
+!.env.example
+
+############################
+# Storage
+############################
+/storage/*.key
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/app/public/*
+/public/storage
+
+############################
+# Cache & Build
+############################
+/bootstrap/cache/*
+/public/build
+/public/hot
+
+############################
+# IDE
+############################
+.idea
+.vscode
+.fleet
+.zed
+
+############################
+# OS
+############################
+.DS_Store
+Thumbs.db
+
+############################
+# Logs
+############################
+*.log
+
+############################
+# Testing
+############################
+.phpunit.result.cache
+.phpunit.cache
+
+############################
+# Local Dev
+############################
+Homestead.json
+Homestead.yaml
+
+############################
+# Security (VERY IMPORTANT)
+############################
+auth.json
