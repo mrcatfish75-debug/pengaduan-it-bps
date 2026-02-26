@@ -1,59 +1,263 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+README FINAL — BACKEND → FRONTEND HANDOVER
+# 🖥️ Sistem Pengaduan IT BPS Kota Palangka Raya
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem Pengaduan IT berbasis **Laravel 12** untuk pengelolaan laporan kerusakan Barang Milik Negara (BMN) di lingkungan internal instansi.
 
-## About Laravel
+Project ini menggunakan **workflow approval berlapis**:
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Pegawai → Admin IT → Kasubag → Status Final Barang
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 👨‍💻 Tujuan Repository
 
-## Learning Laravel
+Repository ini merupakan:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+✅ Backend utama sistem  
+✅ Workflow & Business Logic Authority  
+✅ Database Structure Source  
+✅ API + Controller Logic  
+✅ Security & Audit System  
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Frontend Team **HANYA fokus UI/UX** tanpa mengubah logic backend.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# ⚙️ Tech Stack
 
-### Premium Partners
+- Laravel 12
+- PHP 8.2+
+- MySQL
+- Tailwind CSS
+- Vite
+- Laravel Middleware Security
+- Role Based Access Control
+- Audit Logging System
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+# 🧱 Role Sistem
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Role | Akses |
+|------|------|
+| Pegawai | Membuat laporan |
+| Admin IT | Verifikasi & rekomendasi |
+| Kasubag | Keputusan final |
+| System | Audit & Workflow Control |
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 🔄 Workflow Sistem
 
-## Security Vulnerabilities
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Pegawai
+↓
+MENUNGGU_REVIEW_ADMIN
+↓
+Admin Verifikasi
+↓
+MENUNGGU_KEPUTUSAN_KASUBAG
+↓
+Kasubag Decision
+↓
+SELESAI / DITOLAK
 
-## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+⚠️ Status dikontrol backend dan **tidak boleh diubah dari frontend**.
+
+---
+
+# 🚀 Setup Project (WAJIB DIKUTI)
+
+## 1️⃣ Clone Repository
+
+```bash
+git clone https://github.com/mrcatfish75-debug/pengaduan-it-bps.git
+cd pengaduan-it-bps
+2️⃣ Install Dependency
+composer install
+npm install
+3️⃣ Environment Setup
+
+Copy file environment:
+
+cp .env.example .env
+
+Generate key:
+
+php artisan key:generate
+4️⃣ Database Setup
+
+Buat database baru:
+
+pengaduan_it_bps
+
+Edit .env:
+
+DB_DATABASE=pengaduan_it_bps
+DB_USERNAME=root
+DB_PASSWORD=
+⚠️ PENTING — DATABASE RULE
+
+Gunakan:
+
+php artisan migrate
+php artisan db:seed
+
+❌ DILARANG
+
+php artisan migrate:fresh
+
+Karena akan menghapus:
+
+Master Barang (BMN)
+
+Workflow data
+
+Foreign Key relation
+
+5️⃣ Jalankan Project
+npm run dev
+php artisan serve
+
+Akses:
+
+http://127.0.0.1:8000
+🔐 Akun Default (Seeder)
+Role	Email	Password
+Admin	admin@bps.go.id
+	password
+Kasubag	kasubag@bps.go.id
+	password
+Pegawai	pegawai@bps.go.id
+	password
+📁 Struktur Penting Project
+app/
+ ├── Http/
+ │    ├── Controllers
+ │    ├── Middleware
+ │    └── Requests
+ ├── Models
+ ├── Support (Workflow Engine)
+ └── Services
+
+resources/
+ └── views ← FRONTEND AREA
+🎨 AREA FRONTEND (BOLEH DIUBAH)
+
+Frontend Team boleh mengubah:
+
+resources/views/*
+resources/css/*
+resources/js/*
+
+✅ UI
+✅ Layout
+✅ Styling
+✅ UX Improvement
+
+🚫 AREA BACKEND (JANGAN DIUBAH)
+
+Tanpa koordinasi Backend Owner:
+
+app/Models
+app/Http/Controllers
+app/Support
+database/
+routes/
+config/security.php
+
+Mengubah bagian ini dapat:
+
+❌ merusak workflow
+❌ merusak keamanan
+❌ menyebabkan data corruption
+
+🧾 Activity Log System
+
+Semua aksi tercatat otomatis:
+
+Login
+
+Create laporan
+
+Verifikasi admin
+
+Putusan kasubag
+
+Digunakan untuk audit internal instansi.
+
+🔒 Security Features
+
+✅ Role Middleware
+✅ IP Whitelist Admin
+✅ CSP Header
+✅ Status Transition Guard
+✅ Transaction Database
+✅ Audit Trail
+✅ Request Validation
+
+🤝 Workflow Kerja Tim
+
+Frontend wajib menggunakan branch:
+
+git checkout -b frontend-ui
+
+Push perubahan:
+
+git add .
+git commit -m "UI Update"
+git push
+
+Kemudian buat:
+
+✅ Pull Request → main
+
+Backend akan melakukan review sebelum merge.
+
+🧠 Catatan Penting Untuk Frontend
+
+Backend sudah:
+
+✅ Stable
+✅ Workflow Locked
+✅ Production Ready
+✅ Data Safe
+
+Frontend tidak perlu membuat logic baru.
+
+Jika butuh data tambahan:
+➡️ Request endpoint ke Backend Developer.
+
+📦 Production Requirement (NANTI DEPLOY)
+
+Pastikan .env production:
+
+APP_ENV=production
+APP_DEBUG=false
+SESSION_SECURE_COOKIE=true
+SESSION_SAME_SITE=strict
+LOG_LEVEL=warning
+QUEUE_CONNECTION=database
+👨‍💻 Backend Owner
+
+Maintained by:
+
+MrCatfish75-debug
+Backend Developer — Sistem Pengaduan IT BPS
+
+✅ Status Project
+
+🟢 Backend Stable
+🟢 Ready For Frontend UI/UX Development
+🟢 Safe For Team Collaboration
+
+
+---
+
+## ✅ Setelah ini lakukan:
+
+```bash
+git add README.md
+git commit -m "UPDATE README - FRONTEND HANDOVER GUIDE"
+git push
