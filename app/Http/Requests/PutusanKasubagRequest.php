@@ -7,28 +7,22 @@ use Illuminate\Validation\Rule;
 
 class PutusanKasubagRequest extends FormRequest
 {
-    /**
-     * =====================================================
-     * AUTHORIZATION
-     * =====================================================
-     * Hanya Kasubag boleh memberi keputusan
-     */
+
     public function authorize(): bool
     {
         return auth()->check()
             && auth()->user()->role === 'kasubag';
     }
 
-    /**
-     * =====================================================
-     * VALIDATION RULES
-     * =====================================================
-     */
+
     public function rules(): array
     {
         return [
+
             'status_kasubag' => [
+                'bail',
                 'required',
+                'string',
                 Rule::in([
                     'DISETUJUI_SERVIS_INTERNAL',
                     'DISETUJUI_SERVIS_EKSTERNAL',
@@ -40,42 +34,44 @@ class PutusanKasubagRequest extends FormRequest
             'keputusan_kasubag' => [
                 'nullable',
                 'string',
+                'min:3',
                 'max:1000'
             ],
         ];
     }
 
-    /**
-     * =====================================================
-     * CUSTOM MESSAGE
-     * =====================================================
-     */
+
     public function messages(): array
     {
         return [
+
             'status_kasubag.required' =>
                 'Keputusan wajib dipilih.',
 
             'status_kasubag.in' =>
                 'Status keputusan tidak valid.',
 
+            'keputusan_kasubag.min' =>
+                'Catatan keputusan minimal 3 karakter.',
+
             'keputusan_kasubag.max' =>
                 'Catatan keputusan maksimal 1000 karakter.',
         ];
     }
 
-    /**
-     * =====================================================
-     * SANITIZE INPUT
-     * =====================================================
-     */
+
     protected function prepareForValidation(): void
     {
+
         if ($this->keputusan_kasubag) {
+
             $this->merge([
+
                 'keputusan_kasubag' =>
-                    trim($this->keputusan_kasubag)
+                    trim(preg_replace('/\s+/',' ',$this->keputusan_kasubag))
+
             ]);
+
         }
     }
 }

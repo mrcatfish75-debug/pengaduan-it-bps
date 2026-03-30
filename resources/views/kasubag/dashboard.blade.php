@@ -1,161 +1,185 @@
 <x-app-layout>
 
-<div class="max-w-7xl mx-auto p-6">
+<x-slot name="header">
 
-<h1 class="text-3xl font-bold mb-6
-text-gray-800 dark:text-white">
-Dashboard Kasubag
-</h1>
+<div class="flex items-center justify-between w-full">
 
-{{-- SUCCESS --}}
-@if(session('success'))
-<div class="mb-5 p-4 rounded bg-green-600 text-white shadow">
-    {{ session('success') }}
-</div>
-@endif
-
-<div class="bg-white dark:bg-gray-800
-shadow-xl rounded-xl overflow-hidden">
-
-<div class="p-6 border-b
-border-gray-200 dark:border-gray-700">
-
-<h2 class="text-lg font-semibold
-text-gray-800 dark:text-white">
-Laporan Menunggu Keputusan
+<h2 class="font-semibold text-xl text-gray-800 leading-tight">
+Dashboard
 </h2>
 
 </div>
 
-@if($laporan->count())
+</x-slot>
 
-<div class="overflow-x-auto">
+<div class="p-6 max-w-7xl mx-auto">
 
-<table class="w-full text-sm">
+{{-- SUMMARY --}}
+<div class="grid grid-cols-3 gap-6 mb-6">
 
-<thead class="bg-gray-100 dark:bg-gray-700">
+<div class="bg-yellow-100 p-4 rounded shadow">
+<h3 class="text-sm text-gray-600">Menunggu Keputusan</h3>
+<p class="text-2xl font-bold">{{ $menunggu }}</p>
+</div>
 
-<tr class="text-gray-700 dark:text-gray-200">
-<th class="p-4 text-left">No</th>
-<th class="p-4 text-left">Pelapor</th>
-<th class="p-4 text-left">Barang</th>
-<th class="p-4 text-left">Keluhan</th>
-<th class="p-4 text-left">Rekomendasi Admin</th>
-<th class="p-4 text-center">Keputusan</th>
-</tr>
+<div class="bg-green-100 p-4 rounded shadow">
+<h3 class="text-sm text-gray-600">Selesai</h3>
+<p class="text-2xl font-bold">{{ $selesai }}</p>
+</div>
 
-</thead>
+<div class="bg-red-100 p-4 rounded shadow">
+<h3 class="text-sm text-gray-600">Ditolak</h3>
+<p class="text-2xl font-bold">{{ $ditolak }}</p>
+</div>
 
-<tbody class="divide-y
-divide-gray-200 dark:divide-gray-700">
+</div>
 
-@foreach($laporan as $i => $item)
 
-<tr class="hover:bg-gray-50
-dark:hover:bg-gray-700 transition">
+{{-- LAPORAN TERBARU --}}
 
-<td class="p-4 text-gray-800 dark:text-gray-200">
-{{ $laporan->firstItem() + $i }}
-</td>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
 
-<td class="p-4 font-medium
-text-gray-800 dark:text-white">
-{{ $item->user->name ?? '-' }}
-</td>
+            <h2 class="text-lg font-semibold text-gray-700 text-center">
+                Laporan Terbaru
+            </h2>
 
-<td class="p-4 text-gray-700 dark:text-gray-300">
-<b>{{ $item->barang->nup ?? '-' }}</b><br>
-<span class="text-xs">
-{{ $item->barang->nama_barang ?? '-' }}
-</span>
-</td>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm table-auto bg-white rounded shadow">
 
-<td class="p-4 max-w-xs
-text-gray-700 dark:text-gray-300">
-{{ $item->deskripsi_keluhan }}
-</td>
+                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <tr>
+                        <th class="p-3 text-center">ID</th>
+                        <th class="p-3 text-center">Pelapor</th>
+                        <th class="p-3 text-center">NUP</th>
+                        <th class="p-3 text-center">Barang</th>
+                        <th class="p-3 text-center">Jenis</th>
+                        <th class="p-3 text-center">Deskripsi</th>
+                        <th class="p-3 text-center">Prioritas</th>
+                        <th class="p-3 text-center">Laporan Dibuat</th>
+                        <th class="p-3 text-center">Laporan Selesai</th>
+                        <th class="p-3 text-center">Status</th>
+                    </tr>
+                </thead>
 
-<td class="p-4">
-<span class="px-3 py-1 rounded-full
-bg-blue-600 text-white text-xs">
-{{ $item->status_admin }}
-</span>
-</td>
+                <tbody class="divide-y divide-gray-100">
 
-<td class="p-4 w-72">
+                @forelse($laporan as $item)
 
-<form method="POST"
-action="{{ route('kasubag.putusan',$item->id_laporan) }}">
-@csrf
+                    <tr class="hover:bg-gray-50 transition">
 
-<select name="status_kasubag"
-required
-class="w-full mb-2 rounded
-border-gray-300
-dark:bg-gray-700
-dark:text-white">
+                        {{-- ID --}}
+                        <td class="px-6 py-4 font-semibold text-gray-700">
+                            {{ $item->id_laporan }}
+                        </td>
 
-<option value="">-- Pilih --</option>
+                        {{-- PELAPOR --}}
+                        <td class="px-6 py-4 font-semibold text-gray-700">
+                            {{ $item->user->name ?? '-' }}
+                        </td>
 
-<option value="DISETUJUI_SERVIS_INTERNAL">
-Servis Internal
-</option>
+                        {{-- NUP --}}
+                        <td class="px-6 py-4 font-semibold text-gray-700 text-center">
+                            {{ $item->barang->nup ?? '-' }}
+                        </td>
 
-<option value="DISETUJUI_SERVIS_EKSTERNAL">
-Servis Eksternal
-</option>
+                        {{-- BARANG --}}
+                        <td class="px-6 py-4">
+                            <div class="font-semibold text-gray-800">
+                                {{ $item->barang->nama_barang ?? '-' }}
+                            </div>  
+                            <div class="text-xs text-gray-500">
+                                {{ $item->barang->lokasi_ruang ?? '-' }}
 
-<option value="DISETUJUI_GANTI_BARU">
-Ganti Baru
-</option>
+                        </td>
 
-<option value="DITOLAK_KASUBAG">
-Tolak
-</option>
+                        {{-- JENIS --}}
+                        <td class="px-6 py-4 text-gray-700 text-center">
+                            {{ $item->jenis_kerusakan }}
+                        </td>
 
-</select>
+                        {{-- DESKRIPSI --}}
+                        <td class="p-3 max-w-xs break-words text-justify">
+                            {{ $item->deskripsi_keluhan }}
+                        </td>
 
-<textarea name="keputusan_kasubag"
-rows="2"
-class="w-full rounded
-border-gray-300
-dark:bg-gray-700
-dark:text-white mb-2"
-placeholder="Catatan keputusan"></textarea>
 
-<button type="submit"
-class="w-full bg-indigo-600
-hover:bg-indigo-700
-text-white py-2 rounded">
-Simpan
-</button>
+                        {{-- PRIORITAS --}}
+                        <td class="px-6 py-4 text-center">
+                            <span class="
+                                px-3 py-1 rounded-full text-xs font-semibold
+                                @if($item->prioritas === 'TINGGI') bg-red-100 text-red-700
+                                @elseif($item->prioritas === 'SEDANG') bg-yellow-100 text-yellow-700
+                                @else bg-green-100 text-green-700
+                                @endif">
+                                {{ $item->prioritas }}
+                            </span>
+                        </td>
 
-</form>
+                        {{-- LAPORAN DIBUAT --}}
+                        <td class="p-3 text-center">
+                        {{ $item->created_at ? $item->created_at->format('d M Y H:i') : '-' }}
+                        </td>
 
-</td>
+                        {{-- LAPORAN SELESAI --}}
+                        <td class="p-3 text-center">
 
-</tr>
+                        @if($item->tanggal_selesai)
+                        {{ \Carbon\Carbon::parse($item->tanggal_selesai)->format('d M Y H:i') }}
+                        @else
+                        -
+                        @endif
 
-@endforeach
+                        </td>
 
-</tbody>
+                        {{-- STATUS --}}
+                        <td class="p-3 font-semibold text-center">
 
+                        @switch($item->status_laporan)
+
+                        @case('MENUNGGU_REVIEW_ADMIN')
+                        <span class="text-yellow-600">Menunggu Review Admin</span>
+                        @break
+
+                        @case('MENUNGGU_KEPUTUSAN_KASUBAG')
+                        <span class="text-blue-600">Menunggu Keputusan Kasubag</span>
+                        @break
+
+                        @case('DIKIRIM_VENDOR')
+                        <span class="text-purple-600">Sedang Diservis</span>
+                        @break
+
+                        @case('MENUNGGU_PENGADAAN')
+                        <span class="text-indigo-600">Menunggu Pengadaan</span>
+                        @break
+
+                        @case('SELESAI')
+                        <span class="text-green-600">Selesai</span>
+                        @break
+
+                        @case('DITOLAK')
+                        <span class="text-red-600">Ditolak</span>
+                        @break
+
+                        @endswitch
+
+                        </td>
+
+                       
+                    </tr>
+
+                @empty
+                    <tr>
+                        <td colspan="7"
+                            class="px-6 py-10 text-center text-gray-500">
+                            Belum ada laporan dibuat.
+                        </td>
+                    </tr>
+                @endforelse
+
+                </tbody>
 </table>
-
-</div>
-
-<div class="p-4">
-{{ $laporan->links() }}
-</div>
-
-@else
-
-<div class="p-8 text-center
-text-gray-500 dark:text-gray-400">
-Tidak ada laporan menunggu keputusan.
-</div>
-
-@endif
 
 </div>
 

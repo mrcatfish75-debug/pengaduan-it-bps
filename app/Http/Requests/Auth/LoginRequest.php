@@ -12,53 +12,113 @@ use App\Models\ActivityLog;
 
 class LoginRequest extends FormRequest
 {
+
+    /**
+     * Authorization
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Validation Rules
+     */
     public function rules(): array
     {
         return [
-            'email' => ['required','string','email'],
-            'password' => ['required','string'],
+
+            'email' => [
+                'bail',
+                'required',
+                'string',
+                'email',
+                'max:255'
+            ],
+
+            'password' => [
+                'bail',
+                'required',
+                'string',
+                'max:255'
+            ],
+
         ];
     }
 
+    /**
+     * Attempt login
+     */
     public function authenticate(): void
     {
+
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email','password'), $this->boolean('remember'))) {
+        $credentials = [
+            'email' => $this->email,
+            'password' => $this->password
+        ];
 
-            // 15 menit lock window
-            RateLimiter::hit($this->throttleKey(), 900);
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
 
-            ActivityLog::record(
-                'LOGIN_GAGAL',
-                'User',
-                null,
-                'Login gagal untuk email: '.$this->email
-            );
+            /*
+            =====================================================
+            ANTI BRUTE FORCE DELAY
+            =====================================================
+            */
+
+            usleep(700000); // 0.7 detik
+
+
+            /*
+            =====================================================
+            RATE LIMITER HIT (10 menit)
+            =====================================================
+            */
+
+            RateLimiter::hit($this->throttleKey(), 600);
+
+
+            /*
+            =====================================================
+            LOGIN GAGAL LOG
+            =====================================================
+            */
+
+            ActivityLog::create([
+                'user_id' => null,
+                'aksi' => 'LOGIN_GAGAL',
+                'model' => 'User',
+                'model_id' => null,
+                'deskripsi' => 'Percobaan login gagal untuk email: '
+                    . Str::limit($this->email,120),
+                'ip_address' => $this->ip(),
+                'user_agent' => Str::limit($this->userAgent(),255),
+            ]);
+
 
             throw ValidationException::withMessages([
                 'email' => 'Email atau password salah.',
             ]);
         }
 
-        // Reset counter jika berhasil
-        RateLimiter::clear($this->throttleKey());
 
-        ActivityLog::record(
-            'LOGIN_BERHASIL',
-            'User',
-            Auth::id(),
-            'User berhasil login'
-        );
+        /*
+        =====================================================
+        CLEAR LIMITER JIKA BERHASIL
+        =====================================================
+        */
+
+        RateLimiter::clear($this->throttleKey());
     }
 
+
+    /**
+     * Rate Limit Check
+     */
     public function ensureIsNotRateLimited(): void
     {
+
         $maxAttempts = 5;
 
         if (! RateLimiter::tooManyAttempts($this->throttleKey(), $maxAttempts)) {
@@ -67,22 +127,55 @@ class LoginRequest extends FormRequest
 
         event(new Lockout($this));
 
-        ActivityLog::record(
-            'IP_LOCKED',
-            'User',
-            null,
-            'IP dikunci karena terlalu banyak percobaan login'
-        );
-
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
+
+        /*
+        =====================================================
+        LOCKOUT LOG
+        =====================================================
+        */
+
+        ActivityLog::create([
+            'user_id' => null,
+            'aksi' => 'LOCKOUT',
+            'model' => 'User',
+            'model_id' => null,
+            'deskripsi' => 'Terlalu banyak percobaan login.',
+            'ip_address' => $this->ip(),
+            'user_agent' => Str::limit($this->userAgent(),255),
+        ]);
+
+
         throw ValidationException::withMessages([
-            'email' => "Terlalu banyak percobaan login. Coba lagi dalam {$seconds} detik.",
+            'email' => 'Terlalu banyak percobaan login. Coba lagi dalam '
+                . ceil($seconds / 60) . ' menit.',
         ]);
     }
 
+
+    /**
+     * Throttle Key
+     */
     public function throttleKey(): string
     {
-        return Str::lower($this->string('email')).'|'.$this->ip();
+        return Str::lower(
+            Str::transliterate(trim($this->input('email')))
+        ) . '|' . $this->ip();
+    }
+
+
+    /**
+     * Sanitize Input
+     */
+    protected function prepareForValidation(): void
+    {
+
+        $this->merge([
+
+            'email' => Str::lower(trim($this->email)),
+
+        ]);
+
     }
 }

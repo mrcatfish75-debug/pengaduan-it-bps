@@ -12,49 +12,54 @@ use App\Models\ActivityLog;
 
 class AuthenticatedSessionController extends Controller
 {
+    /**
+     * Show login form.
+     */
     public function create(): View
     {
         return view('auth.login');
     }
 
+    /**
+     * Handle login request.
+     */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Authenticate (sudah ada rate limit di LoginRequest)
         $request->authenticate();
 
+        // Prevent session fixation
         $request->session()->regenerate();
 
-        $user = $request->user();
-
+        // ✅ LOG LOGIN BERHASIL
         ActivityLog::create([
-            'user_id'    => $user->id,
-            'aksi'       => 'LOGIN',
-            'model'      => 'User',
-            'model_id'   => $user->id,
-            'deskripsi'  => 'User login sebagai ' . $user->role,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
+            'user_id'   => Auth::id(),
+            'aksi'      => 'LOGIN_BERHASIL',
+            'model'     => 'User',
+            'model_id'  => Auth::id(),
+            'deskripsi' => 'User berhasil login',
+            'ip_address'=> $request->ip(),
+            'user_agent'=> $request->userAgent(),
         ]);
 
-        return redirect()->route(match ($user->role) {
-            'admin'   => 'admin.dashboard',
-            'kasubag' => 'kasubag.dashboard',
-            default   => 'pegawai.dashboard',
-        });
+        return redirect()->intended(route('dashboard'));
     }
 
+    /**
+     * Handle logout.
+     */
     public function destroy(Request $request): RedirectResponse
     {
-        $user = Auth::user();
-
-        if ($user) {
+        // ✅ LOG LOGOUT
+        if (Auth::check()) {
             ActivityLog::create([
-                'user_id'    => $user->id,
-                'aksi'       => 'LOGOUT',
-                'model'      => 'User',
-                'model_id'   => $user->id,
-                'deskripsi'  => 'User logout',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
+                'user_id'   => Auth::id(),
+                'aksi'      => 'LOGOUT',
+                'model'     => 'User',
+                'model_id'  => Auth::id(),
+                'deskripsi' => 'User logout',
+                'ip_address'=> $request->ip(),
+                'user_agent'=> $request->userAgent(),
             ]);
         }
 
@@ -63,6 +68,6 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        return redirect()->route('login');
     }
 }

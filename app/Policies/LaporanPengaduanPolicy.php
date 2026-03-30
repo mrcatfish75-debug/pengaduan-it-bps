@@ -8,7 +8,7 @@ use App\Models\User;
 class LaporanPengaduanPolicy
 {
     /**
-     * Admin & Kasubag bisa lihat semua
+     * Admin & Kasubag bisa lihat daftar laporan
      */
     public function viewAny(User $user): bool
     {
@@ -25,7 +25,7 @@ class LaporanPengaduanPolicy
             return true;
         }
 
-        // Kasubag hanya lihat yg menunggu keputusan
+        // Kasubag hanya lihat yang menunggu keputusan
         if ($user->role === 'kasubag') {
             return $laporan->status_laporan === 'MENUNGGU_KEPUTUSAN_KASUBAG';
         }
@@ -39,19 +39,11 @@ class LaporanPengaduanPolicy
     }
 
     /**
-     * Update hanya boleh oleh Admin & Kasubag sesuai state
+     * Admin boleh edit laporan
      */
     public function update(User $user, LaporanPengaduan $laporan): bool
     {
-        if ($user->role === 'admin') {
-            return $laporan->status_laporan === 'MENUNGGU_REVIEW_ADMIN';
-        }
-
-        if ($user->role === 'kasubag') {
-            return $laporan->status_laporan === 'MENUNGGU_KEPUTUSAN_KASUBAG';
-        }
-
-        return false;
+        return $user->role === 'admin';
     }
 
     /**

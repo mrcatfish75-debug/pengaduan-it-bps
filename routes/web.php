@@ -1,132 +1,244 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Pegawai\LaporanController;
-use App\Http\Controllers\Admin\LaporanController as AdminLaporan;
-use App\Http\Controllers\Kasubag\LaporanController as KasubagLaporan;
-use App\Http\Controllers\BarangController;
+
+/*
+|--------------------------------------------------------------------------
+| CONTROLLERS
+|--------------------------------------------------------------------------
+*/
+
 use App\Http\Controllers\Admin\DashboardController;
-use App\Models\ActivityLog;
+use App\Http\Controllers\Admin\LaporanController as AdminLaporanController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\BarangController;
+
+use App\Http\Controllers\Pegawai\LaporanController as PegawaiController;
+use App\Http\Controllers\Kasubag\LaporanController as KasubagController;
+
 
 /*
 |--------------------------------------------------------------------------
-| HALAMAN AWAL
+| ROOT (FIXED)
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', function () {
-    return redirect()->route('login');
+
+    if (!auth()->check()) {
+        return redirect()->route('login');
+    }
+
+    return redirect()->route('dashboard');
+
 });
-/*
-|--------------------------------------------------------------------------
-| ROUTE UMUM (WAJIB LOGIN)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth'])->group(function () {
 
-    Route::get('/dashboard', function () {
-
-        return match (auth()->user()->role) {
-            'admin'   => redirect()->route('admin.dashboard'),
-            'kasubag' => redirect()->route('kasubag.dashboard'),
-            default   => redirect()->route('pegawai.dashboard'),
-        };
-
-    })->name('dashboard');
-
-    /*
-    |--------------------------------------------------------------------------
-    | PROFILE
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
 
 /*
 |--------------------------------------------------------------------------
-| ROUTE PEGAWAI
+| SMART DASHBOARD REDIRECT (FIXED)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth','pegawai'])
-    ->prefix('pegawai')
-    ->group(function () {
 
-        Route::get('/dashboard', function () {
-            return view('pegawai.dashboard');
-        })->name('pegawai.dashboard');
+Route::middleware('auth')->get('/dashboard', function () {
 
-        Route::get('/lapor', [LaporanController::class,'create'])
-            ->name('lapor.create');
+    $user = Auth::user();
 
-        Route::post('/lapor', [LaporanController::class,'store'])
-            ->name('lapor.store');
+    return match ($user->role) {
 
-        Route::get('/laporan-saya', [LaporanController::class,'myReports'])
-            ->name('pegawai.laporan_saya');
-});
+        'admin'   => redirect()->route('admin.dashboard'),
+        'pegawai' => redirect()->route('pegawai.dashboard'),
+        'kasubag' => redirect()->route('kasubag.dashboard'),
+
+        default   => redirect()->route('login'),
+
+    };
+
+})->name('dashboard');
+
 
 /*
 |--------------------------------------------------------------------------
-| ROUTE ADMIN (TIM IT)
+| ================= ADMIN AREA =================
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth','admin','admin.ip'])
+
+Route::middleware(['auth','admin'])
     ->prefix('admin')
+    ->name('admin.')
     ->group(function () {
 
-        Route::get('/dashboard', [DashboardController::class, 'index'])
-            ->name('admin.dashboard');
+        Route::get('/dashboard', [DashboardController::class,'index'])
+            ->name('dashboard');
 
-        Route::get('/laporan', [AdminLaporan::class,'index'])
-            ->name('admin.laporan');
+        Route::get('/laporan', [AdminLaporanController::class,'index'])
+            ->name('laporan');
 
-        Route::get('/laporan/{id}', [AdminLaporan::class,'show'])
-            ->name('admin.laporan.show');
+        Route::get('/laporan/{id}', [AdminLaporanController::class,'show'])
+            ->whereNumber('id')
+            ->name('laporan.show');
 
-        Route::post('/laporan/{id}/verifikasi', [AdminLaporan::class,'verifikasi'])
-            ->name('admin.laporan.verifikasi');
+        Route::get('/laporan/{id}/edit', [AdminLaporanController::class,'edit'])
+            ->whereNumber('id')
+            ->name('laporan.edit');
 
-        Route::post('/laporan/{id}/hasil', [AdminLaporan::class,'simpanHasil'])
-            ->name('admin.laporan.hasil');
+        Route::put('/laporan/{id}', [AdminLaporanController::class,'update'])
+            ->whereNumber('id')
+            ->name('laporan.update');
 
-        // 🔒 Import Barang (dengan rate limit)
-        Route::post('/import-barang', [BarangController::class, 'import'])
-            ->middleware('throttle:5,1')
+        Route::delete('/laporan/{id}', [AdminLaporanController::class,'destroy'])
+            ->whereNumber('id')
+            ->name('laporan.destroy');
+
+        Route::post('/laporan/{id}/verifikasi', [AdminLaporanController::class,'verifikasi'])
+            ->whereNumber('id')
+            ->name('laporan.verifikasi');
+
+        Route::post('/laporan/{id}/selesai', [AdminLaporanController::class,'selesai'])
+            ->whereNumber('id')
+            ->name('laporan.selesai');
+
+        Route::get('/activity-log', [ActivityLogController::class,'index'])
+            ->name('activity-log');
+
+        Route::post('/import-barang', [BarangController::class,'import'])
             ->name('import.barang');
 
-        // 🔒 Activity Log
-        Route::get('/activity-log', function () {
-            $logs = ActivityLog::with('user')
-                ->latest()
-                ->paginate(15);
+        Route::get('/pengguna', [UserController::class,'index'])
+            ->name('pengguna');
 
-            return view('admin.activity-log.index', compact('logs'));
-        })->name('admin.activity-log');
+        Route::get('/pengguna/create', [UserController::class,'create'])
+            ->name('pengguna.create');
 
-        
+        Route::post('/pengguna', [UserController::class,'store'])
+            ->name('pengguna.store');
+
+        Route::get('/pengguna/{id}/edit', [UserController::class,'edit'])
+            ->whereNumber('id')
+            ->name('pengguna.edit');
+
+        Route::put('/pengguna/{id}', [UserController::class,'update'])
+            ->whereNumber('id')
+            ->name('pengguna.update');
+
+        Route::delete('/pengguna/{id}', [UserController::class,'destroy'])
+            ->whereNumber('id')
+            ->name('pengguna.destroy');
+
 });
+
 
 /*
 |--------------------------------------------------------------------------
-| ROUTE KASUBAG
+| ================= PEGAWAI AREA =================
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth','kasubag'])
-    ->prefix('kasubag')
+
+Route::middleware(['auth','pegawai'])
+    ->prefix('pegawai')
+    ->name('pegawai.')
     ->group(function () {
 
-        Route::get('/dashboard', [KasubagLaporan::class,'index'])
-            ->name('kasubag.dashboard');
+        Route::get('/dashboard', [PegawaiController::class,'dashboard'])
+            ->name('dashboard');
 
-        Route::post('/laporan/{id}/putusan', [KasubagLaporan::class,'putusan'])
-            ->name('kasubag.putusan');
+        Route::get('/lapor', [PegawaiController::class,'create'])
+            ->name('lapor.create');
+
+        Route::post('/lapor', [PegawaiController::class,'store'])
+            ->name('lapor.store');
+
+        Route::get('/laporan-saya', [PegawaiController::class,'myReports'])
+            ->name('laporan_saya');
+
 });
+
 
 /*
 |--------------------------------------------------------------------------
-| AUTH ROUTES
+| ================= KASUBAG AREA =================
 |--------------------------------------------------------------------------
 */
+
+Route::middleware(['auth','kasubag'])
+    ->prefix('kasubag')
+    ->name('kasubag.')
+    ->group(function () {
+
+        Route::get('/dashboard', [KasubagController::class,'index'])
+            ->name('dashboard');
+
+        Route::get('/laporan/{id}', [KasubagController::class,'show'])
+            ->whereNumber('id')
+            ->name('laporan.show');
+
+        Route::get('/laporan/{id}/edit', [KasubagController::class,'edit'])
+            ->whereNumber('id')
+            ->name('laporan.edit');
+
+        Route::put('/laporan/{id}', [KasubagController::class,'update'])
+            ->whereNumber('id')
+            ->name('laporan.update');
+
+        Route::post('/laporan/{id}/putusan', [KasubagController::class,'putusan'])
+            ->whereNumber('id')
+            ->name('putusan');
+
+        Route::get('/hasil-laporan', [KasubagController::class,'hasil'])
+            ->name('hasil');
+
+        Route::get('/kelola-barang', [KasubagController::class,'barang'])
+            ->name('barang');
+
+        Route::patch('/kelola-barang/{id}', [KasubagController::class,'updateBarang'])
+            ->whereNumber('id')
+            ->name('barang.update');
+
+        Route::delete('/kelola-barang/{id}', [KasubagController::class,'destroyBarang'])
+            ->whereNumber('id')
+            ->name('barang.destroy');
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| PROFILE
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/profile', [ProfileController::class,'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class,'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class,'destroy'])
+        ->name('profile.destroy');
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| FALLBACK (PENTING BANGET)
+|--------------------------------------------------------------------------
+*/
+
+Route::fallback(function () {
+    return redirect()->route('dashboard');
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| AUTH (BREEZE)
+|--------------------------------------------------------------------------
+*/
+
 require __DIR__.'/auth.php';

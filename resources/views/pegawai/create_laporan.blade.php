@@ -1,125 +1,192 @@
-<x-app-layout>
+@extends('layouts.pegawai')
 
-<x-slot name="header">
-    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-        Buat Laporan Kerusakan IT
-    </h2>
-</x-slot>
+@section('content')
 
-<div class="py-10">
-    <div class="max-w-3xl mx-auto px-6">
+<div class="max-w-3xl mx-auto">
 
-        {{-- SUCCESS --}}
-        @if(session('success'))
-            <div class="mb-6 p-4 rounded-lg bg-green-100 text-green-800 border border-green-300">
-                {{ session('success') }}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-10">
+
+        <h1 class="text-2xl font-bold text-gray-800 mb-8">
+            Buat Laporan Kerusakan IT
+        </h1>
+
+        @if ($errors->any())
+
+            <div class="mb-6 bg-red-100 text-red-700 p-4 rounded-lg">
+                {{ $errors->first() }}
             </div>
+
         @endif
 
-        {{-- ERROR --}}
-        @if($errors->any())
-            <div class="mb-6 p-4 rounded-lg bg-red-100 text-red-800 border border-red-300">
-                <ul class="list-disc pl-5 space-y-1">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+        <form
+            method="POST"
+            action="{{ route('pegawai.lapor.store') }}"
+            class="space-y-6"
+        >
+
+            @csrf
+
+            <!-- BARANG -->
+            <div>
+
+                <label class="block text-sm font-semibold text-gray-600 mb-2">
+                    Pilih Barang (Bisa Diketik NUP / Nama / Ruangan)
+                </label>
+
+                <input
+                    type="text"
+                    id="barangInput"
+                    list="barangList"
+                    placeholder="Ketik NUP atau Nama Barang..."
+                    class="w-full rounded-xl border-gray-300 focus:ring-2 focus:ring-indigo-500 p-3"
+                    autocomplete="off"
+                    required
+                >
+
+                <datalist id="barangList">
+
+                    @foreach ($barang as $item)
+
+                        <option
+                            value="{{ $item->nup }} - {{ $item->nama_barang }} ({{ $item->lokasi_ruang }})"
+                            data-id="{{ $item->id }}"
+                        >
+                        </option>
+
                     @endforeach
-                </ul>
+
+                </datalist>
+
+                <input
+                    type="hidden"
+                    name="barang_id"
+                    id="barang_id"
+                >
+
             </div>
-        @endif
 
-        <div class="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8">
+            <!-- JENIS -->
+            <div>
 
-            <form method="POST" action="{{ route('lapor.store') }}" class="space-y-6">
-                @csrf
+                <label class="block text-sm font-semibold text-gray-600 mb-2">
+                    Jenis Kerusakan
+                </label>
 
-                {{-- PILIH BARANG --}}
-                <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Pilih Barang (NUP)
-                    </label>
+                <select
+                    name="jenis_kerusakan"
+                    required
+                    class="w-full rounded-xl border-gray-300 focus:ring-2 focus:ring-indigo-500 p-3"
+                >
 
-                    <select name="barang_id" required
-                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 
-                               bg-white dark:bg-gray-700 
-                               text-gray-800 dark:text-white
-                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">-- Pilih Barang --</option>
+                    <option value="">-- Pilih Jenis --</option>
 
-                        @foreach($barang as $b)
-                            <option value="{{ $b->id }}">
-                                {{ $b->nup }} - {{ $b->nama_barang }} ({{ $b->lokasi_ruang }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    <option
+                        value="Hardware"
+                        {{ old('jenis_kerusakan') == 'Hardware' ? 'selected' : '' }}
+                    >
+                        Kerusakan Perangkat (Hardware)
+                    </option>
 
-                {{-- JENIS --}}
-                <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Jenis Kerusakan
-                    </label>
+                    <option
+                        value="Software"
+                        {{ old('jenis_kerusakan') == 'Software' ? 'selected' : '' }}
+                    >
+                        Kerusakan Aplikasi / Sistem (Software)
+                    </option>
 
-                    <select name="jenis_kerusakan" required
-                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 
-                               bg-white dark:bg-gray-700 
-                               text-gray-800 dark:text-white
-                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">-- Pilih Jenis --</option>
-                        <option value="Hardware">Hardware</option>
-                        <option value="Software">Software</option>
-                        <option value="Jaringan">Jaringan</option>
-                        <option value="Lainnya">Lainnya</option>
-                    </select>
-                </div>
+                </select>
 
-                {{-- DESKRIPSI --}}
-                <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Deskripsi Keluhan
-                    </label>
+            </div>
 
-                    <textarea name="deskripsi_keluhan"
-                              required
-                              rows="4"
-                              placeholder="Jelaskan detail kerusakan..."
-                              class="w-full rounded-lg border border-gray-300 dark:border-gray-600
-                                     bg-white dark:bg-gray-700
-                                     text-gray-800 dark:text-white
-                                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
-                </div>
+            <!-- DESKRIPSI -->
+            <div>
 
-                {{-- PRIORITAS --}}
-                <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Prioritas
-                    </label>
+                <label class="block text-sm font-semibold text-gray-600 mb-2">
+                    Deskripsi Keluhan
+                </label>
 
-                    <select name="prioritas" required
-                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 
-                               bg-white dark:bg-gray-700 
-                               text-gray-800 dark:text-white
-                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">-- Pilih Prioritas --</option>
-                        <option value="Low">Low</option>
-                        <option value="Normal">Normal</option>
-                        <option value="High">High</option>
-                    </select>
-                </div>
+                <textarea
+                    name="deskripsi_keluhan"
+                    rows="4"
+                    maxlength="2000"
+                    class="w-full rounded-xl border-gray-300 focus:ring-2 focus:ring-indigo-500 p-3"
+                    placeholder="Jelaskan detail kerusakan..."
+                >{{ old('deskripsi_keluhan') }}</textarea>
 
-                {{-- BUTTON --}}
-                <div class="pt-2">
-                    <button type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 
-                               text-white font-semibold py-3 rounded-lg 
-                               transition duration-200 shadow-md">
-                        Kirim Laporan
-                    </button>
-                </div>
+            </div>
 
-            </form>
+            <!-- PRIORITAS -->
+            <div>
 
-        </div>
+                <label class="block text-sm font-semibold text-gray-600 mb-2">
+                    Tingkat Urgensi
+                </label>
+
+                <select
+                    name="prioritas"
+                    required
+                    class="w-full rounded-xl border-gray-300 focus:ring-2 focus:ring-indigo-500 p-3"
+                >
+
+                    <option value="">-- Pilih Tingkat Urgensi --</option>
+
+                    <option value="RENDAH" {{ old('prioritas') == 'RENDAH' ? 'selected' : '' }}>
+                        Rendah (Masih Bisa Digunakan)
+                    </option>
+
+                    <option value="SEDANG" {{ old('prioritas') == 'SEDANG' ? 'selected' : '' }}>
+                        Sedang (Mengganggu Pekerjaan)
+                    </option>
+
+                    <option value="TINGGI" {{ old('prioritas') == 'TINGGI' ? 'selected' : '' }}>
+                        Tinggi (Tidak Bisa Digunakan Sama Sekali)
+                    </option>
+
+                </select>
+
+            </div>
+
+            <button
+                type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 transition text-white py-3 rounded-xl font-semibold shadow"
+            >
+                Kirim Laporan
+            </button>
+
+        </form>
+
     </div>
+
 </div>
 
-</x-app-layout>
+<script>
+
+    document
+        .getElementById('barangInput')
+        .addEventListener('change', function () {
+
+            const input   = this.value.trim();
+            const options = document.querySelectorAll('#barangList option');
+
+            let found = false;
+
+            options.forEach(function (option) {
+
+                if (option.value === input) {
+
+                    document.getElementById('barang_id').value = option.dataset.id;
+                    found = true;
+
+                }
+
+            });
+
+            if (!found) {
+                document.getElementById('barang_id').value = '';
+            }
+
+        });
+
+</script>
+
+@endsection

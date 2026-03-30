@@ -12,9 +12,9 @@ class LaporanPengaduan extends Model
     | TABLE CONFIG
     |--------------------------------------------------------------------------
     */
+
     protected $table = 'laporan_pengaduan';
     protected $primaryKey = 'id_laporan';
-
     public $timestamps = true;
 
     /*
@@ -22,6 +22,7 @@ class LaporanPengaduan extends Model
     | MASS ASSIGNMENT
     |--------------------------------------------------------------------------
     */
+
     protected $fillable = [
         'id_user',
         'barang_id',
@@ -40,6 +41,7 @@ class LaporanPengaduan extends Model
         'tanggal_verifikasi_admin',
         'tanggal_keputusan_kasubag',
     ];
+
 
     /*
     |--------------------------------------------------------------------------
@@ -65,6 +67,7 @@ class LaporanPengaduan extends Model
         return $this->hasOne(StatusBarang::class, 'id_laporan');
     }
 
+
     /*
     |--------------------------------------------------------------------------
     | BUSINESS HELPER
@@ -74,19 +77,36 @@ class LaporanPengaduan extends Model
     /**
      * Cek apakah barang masih diproses laporan lain
      */
+
     public static function masihDiproses($barangId): bool
     {
         return self::where('barang_id', $barangId)
             ->whereIn('status_laporan', [
                 'MENUNGGU_REVIEW_ADMIN',
-                'MENUNGGU_KEPUTUSAN_KASUBAG'
+                'MENUNGGU_KEPUTUSAN_KASUBAG',
+                'DIKIRIM_VENDOR',
+                'MENUNGGU_PENGADAAN'
             ])
             ->exists();
     }
 
+
+    /**
+     * Cek apakah laporan sudah final
+     */
+
+    public function isFinal(): bool
+    {
+        return in_array($this->status_laporan, [
+            'SELESAI',
+            'DITOLAK'
+        ]);
+    }
+
+
     /*
     |--------------------------------------------------------------------------
-    | 🔒 WORKFLOW GUARD (FINAL SECURITY LAYER)
+    | WORKFLOW GUARD
     |--------------------------------------------------------------------------
     */
 
@@ -94,37 +114,45 @@ class LaporanPengaduan extends Model
     {
         static::updating(function ($laporan) {
 
-            /*
-            --------------------------------------------------
-            FINAL STATE LOCK
-            laporan selesai / ditolak tidak boleh diubah
-            --------------------------------------------------
-            */
-            if (in_array(
-                $laporan->getOriginal('status_laporan'),
-                ['SELESAI', 'DITOLAK']
-            )) {
-                throw new \Exception(
-                    'Final laporan tidak boleh diubah.'
-                );
-            }
+            $oldStatus = $laporan->getOriginal('status_laporan');
 
             /*
-            --------------------------------------------------
-            STATUS TRANSITION VALIDATION
-            --------------------------------------------------
+            |--------------------------------------------------------------------------
+            | FINAL STATE LOCK
+            | hanya blok perubahan STATUS jika sudah final
+            |--------------------------------------------------------------------------
             */
-            if ($laporan->isDirty('status_laporan')) {
 
-                $old = $laporan->getOriginal('status_laporan');
-                $new = $laporan->status_laporan;
+            if (in_array($oldStatus, ['SELESAI','DITOLAK'])) {
 
-                if (!LaporanStatus::canTransition($old, $new)) {
+                if ($laporan->isDirty('status_laporan')) {
                     throw new \Exception(
-                        "Illegal status transition: {$old} → {$new}"
+                        'Status laporan final tidak boleh diubah.'
                     );
                 }
+
+                return;
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | STATUS TRANSITION VALIDATION
+            |--------------------------------------------------------------------------
+            */
+
+            if ($laporan->isDirty('status_laporan')) {
+
+                $newStatus = $laporan->status_laporan;
+
+                if (!LaporanStatus::canTransition($oldStatus, $newStatus)) {
+
+                    throw new \Exception(
+                        "Illegal status transition: {$oldStatus} → {$newStatus}"
+                    );
+
+                }
+            }
+
         });
     }
 }

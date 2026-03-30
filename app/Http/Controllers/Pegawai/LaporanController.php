@@ -12,13 +12,57 @@ use App\Http\Requests\StoreLaporanRequest;
 
 class LaporanController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | FORM LAPORAN
-    |--------------------------------------------------------------------------
-    */
+
+    public function dashboard()
+    {
+
+        // ================= STATISTIK =================
+
+        $total = LaporanPengaduan::count();
+
+        $proses = LaporanPengaduan::whereIn(
+            'status_laporan',
+            [
+                'MENUNGGU_REVIEW_ADMIN',
+                'MENUNGGU_KEPUTUSAN_KASUBAG',
+                'DIKIRIM_VENDOR',
+                'MENUNGGU_PENGADAAN'
+            ]
+        )->count();
+
+        $selesai = LaporanPengaduan::where(
+            'status_laporan',
+            'SELESAI'
+        )->count();
+
+        $ditolak = LaporanPengaduan::where(
+            'status_laporan',
+            'DITOLAK'
+        )->count();
+
+
+        // ================= LAPORAN TERBARU =================
+
+        $laporan = LaporanPengaduan::with(['user','barang'])
+            ->latest()
+            ->take(10)
+            ->get();
+
+
+        return view('pegawai.dashboard', compact(
+            'total',
+            'proses',
+            'selesai',
+            'ditolak',
+            'laporan'
+        ));
+    }
+
+
+
     public function create()
     {
+
         $barang = Barang::whereNotIn('kondisi', [
                         'Dalam Perbaikan (Internal)',
                         'Service Eksternal'
@@ -29,35 +73,17 @@ class LaporanController extends Controller
         return view('pegawai.create_laporan', compact('barang'));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SIMPAN LAPORAN
-    |--------------------------------------------------------------------------
-    */
+
+
     public function store(StoreLaporanRequest $request)
     {
-        DB::transaction(function () use ($request) {
 
-            /*
-            |====================================================
-            | 🔒 DATABASE ROW LOCK (ANTI DOUBLE SUBMIT)
-            |====================================================
-            | Mencegah:
-            | - double click
-            | - spam submit
-            | - network retry
-            | - multi tab submit
-            */
+        DB::transaction(function () use ($request) {
 
             $barang = Barang::where('id', $request->barang_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            /*
-            |====================================================
-            | 🔒 CEK ULANG SETELAH LOCK
-            |====================================================
-            */
 
             $isDiproses = LaporanPengaduan::where('barang_id', $barang->id)
                 ->whereIn('status_laporan', [
@@ -70,60 +96,66 @@ class LaporanController extends Controller
                 abort(409, 'Barang ini masih dalam proses laporan.');
             }
 
-            /*
-            |====================================================
-            | CREATE LAPORAN
-            |====================================================
-            */
+
+            $allowedPrioritas = ['RENDAH','SEDANG','TINGGI'];
+
+            if (!in_array($request->prioritas, $allowedPrioritas)) {
+                abort(403, 'Prioritas tidak valid.');
+            }
+
 
             $laporan = LaporanPengaduan::create([
-                'id_user'            => Auth::id(),
-                'barang_id'          => $barang->id,
-                'jenis_kerusakan'    => $request->jenis_kerusakan,
-                'deskripsi_keluhan'  => $request->deskripsi_keluhan,
-                'prioritas'          => $request->prioritas,
-                'tanggal_lapor'      => now(),
-                'status_laporan'     => 'MENUNGGU_REVIEW_ADMIN'
+                'id_user'           => Auth::id(),
+                'barang_id'         => $barang->id,
+                'jenis_kerusakan'   => trim($request->jenis_kerusakan),
+                'deskripsi_keluhan' => trim($request->deskripsi_keluhan),
+                'prioritas'         => $request->prioritas,
+                'tanggal_lapor'     => now(),
+                'status_laporan'    => 'MENUNGGU_REVIEW_ADMIN'
             ]);
 
-            /*
-            |====================================================
-            | 📝 AUDIT LOG
-            |====================================================
-            */
 
-            ActivityLog::record(
-                'BUAT_LAPORAN',
-                'LaporanPengaduan',
-                $laporan->id_laporan,
-                'Pegawai membuat laporan baru'
-            );
+            ActivityLog::create([
+                'user_id'    => Auth::id(),
+                'aksi'       => 'BUAT_LAPORAN',
+                'model'      => 'LaporanPengaduan',
+                'model_id'   => $laporan->id_laporan,
+                'deskripsi'  => 'Pegawai membuat laporan baru',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
         });
 
+
         return redirect()
-            ->route('pegawai.dashboard')
+            ->route('pegawai.laporan_saya')
             ->with('success', 'Laporan berhasil dikirim.');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | LAPORAN SAYA (DATA ISOLATION)
-    |--------------------------------------------------------------------------
-    */
+
+
     public function myReports()
     {
+
         $laporan = LaporanPengaduan::with('barang')
             ->where('id_user', Auth::id())
-            ->orderBy('created_at','desc')
+            ->orderByDesc('created_at')
             ->paginate(10);
 
-        ActivityLog::record(
-            'LIHAT_LAPORAN_SAYA',
-            'LaporanPengaduan',
-            null,
-            'Pegawai membuka halaman laporan saya'
-        );
+
+        ActivityLog::create([
+            'user_id'    => Auth::id(),
+            'aksi'       => 'LIHAT_LAPORAN_SAYA',
+            'model'      => 'LaporanPengaduan',
+            'model_id'   => null,
+            'deskripsi'  => 'Pegawai membuka halaman laporan saya',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+
 
         return view('pegawai.laporan_saya', compact('laporan'));
     }
+
 }

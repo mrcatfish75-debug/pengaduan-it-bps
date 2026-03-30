@@ -3,81 +3,51 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Support\Facades\Log;
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Illuminate\Auth\AuthenticationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
 
-    /*
-    |--------------------------------------------------------------------------
-    | ROUTING
-    |--------------------------------------------------------------------------
-    */
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
 
-    /*
-    |--------------------------------------------------------------------------
-    | MIDDLEWARE CONFIGURATION
-    |--------------------------------------------------------------------------
-    */
-    ->withMiddleware(function (Middleware $middleware): void {
+    ->withMiddleware(function (Middleware $middleware) {
 
-        /*
-        |--------------------------------
-        | SANCTUM (IMPORTANT)
-        |--------------------------------
-        | Allows SPA / Frontend Authentication
-        */
-        $middleware->append(
-            EnsureFrontendRequestsAreStateful::class
-        );
-
-        /*
-        |--------------------------------
-        | ROLE MIDDLEWARE ALIAS
-        |--------------------------------
-        */
+        // ================= REGISTER MIDDLEWARE ROLE =================
         $middleware->alias([
-            'admin'     => \App\Http\Middleware\AdminMiddleware::class,
-            'pegawai'   => \App\Http\Middleware\PegawaiMiddleware::class,
-            'kasubag'   => \App\Http\Middleware\KasubagMiddleware::class,
-            'admin.ip'  => \App\Http\Middleware\AdminIpWhitelist::class,
+            'admin'   => \App\Http\Middleware\AdminMiddleware::class,
+            'pegawai' => \App\Http\Middleware\PegawaiMiddleware::class,
+            'kasubag' => \App\Http\Middleware\KasubagMiddleware::class,
         ]);
 
-        /*
-        |--------------------------------
-        | GLOBAL SECURITY HEADERS
-        |--------------------------------
-        */
-        $middleware->append(
-            \App\Http\Middleware\SecurityHeaders::class
-        );
     })
 
-    /*
-    |--------------------------------------------------------------------------
-    | EXCEPTION HANDLING
-    |--------------------------------------------------------------------------
-    */
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
 
-        $exceptions->report(function (\Throwable $e) {
+        // ================= AUTH EXCEPTION =================
+        $exceptions->render(function (AuthenticationException $e, $request) {
+            return redirect()->route('login');
+        });
 
-            if (app()->environment('production')) {
+        // ================= HANDLE 403 =================
+        $exceptions->render(function (HttpException $e, $request) {
 
-                Log::error('SYSTEM_ERROR', [
-                    'message' => $e->getMessage(),
-                    'file'    => $e->getFile(),
-                    'line'    => $e->getLine(),
-                    'ip'      => request()->ip(),
-                    'url'     => request()->fullUrl(),
-                    'method'  => request()->method(),
-                ]);
+            if ($e->getStatusCode() === 403) {
+                return redirect()->route('login')
+                    ->with('error', 'Akses tidak diizinkan');
+            }
+
+        });
+
+        // ================= HANDLE 419 (SESSION EXPIRED) =================
+        $exceptions->render(function (HttpException $e, $request) {
+
+            if ($e->getStatusCode() === 419) {
+                return redirect()->route('login')
+                    ->with('error', 'Session habis, silakan login ulang.');
             }
 
         });

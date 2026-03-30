@@ -12,27 +12,43 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| AUTH ROUTES (VERSI INSTANSI - REGISTER DIMATIKAN)
+| AUTH ROUTES (NO PUBLIC REGISTER)
 |--------------------------------------------------------------------------
-| User tidak boleh register sendiri.
-| Akun dibuat oleh Admin.
 */
 
 Route::middleware('guest')->group(function () {
 
-    // LOGIN
+    /*
+    |--------------------------------------------------------------------------
+    | LOGIN
+    |--------------------------------------------------------------------------
+    */
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:5,1') // max 5 attempt per minute
+        ->name('login.store');
 
-    // RESET PASSWORD (opsional tapi direkomendasikan)
+
+    /*
+    |--------------------------------------------------------------------------
+    | FORGOT PASSWORD
+    |--------------------------------------------------------------------------
+    */
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:3,1') // prevent spam reset
         ->name('password.email');
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESET PASSWORD
+    |--------------------------------------------------------------------------
+    */
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 
@@ -41,9 +57,19 @@ Route::middleware('guest')->group(function () {
 });
 
 
+/*
+|--------------------------------------------------------------------------
+| AUTHENTICATED USER ROUTES
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware('auth')->group(function () {
 
-    // VERIFY EMAIL (opsional Laravel bawaan)
+    /*
+    |--------------------------------------------------------------------------
+    | EMAIL VERIFICATION (OPTIONAL)
+    |--------------------------------------------------------------------------
+    */
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
@@ -55,16 +81,32 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:6,1')
         ->name('verification.send');
 
-    // CHANGE PASSWORD
+
+    /*
+    |--------------------------------------------------------------------------
+    | CONFIRM PASSWORD
+    |--------------------------------------------------------------------------
+    */
     Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])
         ->name('password.confirm');
 
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHANGE PASSWORD (PROFILE)
+    |--------------------------------------------------------------------------
+    */
     Route::put('password', [PasswordController::class, 'update'])
         ->name('password.update');
 
-    // LOGOUT
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOGOUT
+    |--------------------------------------------------------------------------
+    */
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });

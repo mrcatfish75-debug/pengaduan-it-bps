@@ -1,239 +1,281 @@
 <x-app-layout>
+
+    <x-slot name="header">
+
+        <div class="flex items-center justify-between w-full">
+
+            <h2 class="text-xl font-semibold text-gray-800 leading-tight">
+                LAPORAN
+            </h2>
+
+        </div>
+
+    </x-slot>
+
+
     <div class="p-6">
 
-        <h1 class="text-2xl font-bold mb-6 text-gray-800">
-            Daftar Laporan Kerusakan IT
-        </h1>
 
-        {{-- SUCCESS ALERT --}}
-        @if(session('success'))
-            <div class="bg-green-500 text-white p-3 mb-4 rounded shadow">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        {{-- ERROR ALERT --}}
-        @if(session('error'))
-            <div class="bg-red-500 text-white p-3 mb-4 rounded shadow">
-                {{ session('error') }}
-            </div>
-        @endif
-
-
-        {{-- ================= FILTER + SEARCH ================= --}}
-        <form method="GET" class="mb-6 flex flex-wrap gap-3 items-center">
+        {{-- ================= FILTER ================= --}}
+        <form method="GET"
+              class="flex flex-col md:flex-row md:items-center gap-3 mb-6">
 
             <select name="status"
-                class="border rounded px-3 py-2 text-sm">
+                    class="px-3 py-2 text-sm border rounded w-full md:w-auto">
+
                 <option value="">Semua Status</option>
 
                 <option value="MENUNGGU_REVIEW_ADMIN"
-                    {{ request('status') == 'MENUNGGU_REVIEW_ADMIN' ? 'selected' : '' }}>
+                    {{ request('status') === 'MENUNGGU_REVIEW_ADMIN' ? 'selected' : '' }}>
                     Menunggu Review Admin
                 </option>
 
                 <option value="MENUNGGU_KEPUTUSAN_KASUBAG"
-                    {{ request('status') == 'MENUNGGU_KEPUTUSAN_KASUBAG' ? 'selected' : '' }}>
+                    {{ request('status') === 'MENUNGGU_KEPUTUSAN_KASUBAG' ? 'selected' : '' }}>
                     Menunggu Keputusan Kasubag
                 </option>
 
+                <option value="DIKIRIM_VENDOR"
+                    {{ request('status') === 'DIKIRIM_VENDOR' ? 'selected' : '' }}>
+                    Dikirim ke Vendor
+                </option>
+
+                <option value="MENUNGGU_PENGADAAN"
+                    {{ request('status') === 'MENUNGGU_PENGADAAN' ? 'selected' : '' }}>
+                    Menunggu Pengadaan
+                </option>
+
                 <option value="SELESAI"
-                    {{ request('status') == 'SELESAI' ? 'selected' : '' }}>
+                    {{ request('status') === 'SELESAI' ? 'selected' : '' }}>
                     Selesai
                 </option>
 
                 <option value="DITOLAK"
-                    {{ request('status') == 'DITOLAK' ? 'selected' : '' }}>
+                    {{ request('status') === 'DITOLAK' ? 'selected' : '' }}>
                     Ditolak
                 </option>
+
             </select>
 
+
             <input type="text"
-                name="search"
-                value="{{ request('search') }}"
-                placeholder="Cari NUP Barang..."
-                class="border rounded px-3 py-2 text-sm">
+                   name="search"
+                   value="{{ request('search') }}"
+                   placeholder="Cari NUP / Nama Barang..."
+                   class="px-3 py-2 text-sm border rounded w-full md:w-64">
+
 
             <button type="submit"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                    class="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700">
                 Filter
             </button>
 
-           <a href="{{ route('admin.laporan') }}"
-                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm">
+
+            <a href="{{ route('admin.laporan') }}"
+               class="px-4 py-2 text-sm text-white bg-gray-500 rounded hover:bg-gray-600">
                 Reset
             </a>
 
         </form>
-        {{-- ===================================================== --}}
 
 
-        <div class="overflow-x-auto bg-white rounded shadow">
-            <table class="table-auto w-full text-sm">
 
-                <thead class="bg-gray-200 text-gray-800">
-                    <tr>
-                        <th class="p-3 text-left">ID</th>
-                        <th class="p-3 text-left">Pelapor</th>
-                        <th class="p-3 text-left">Barang (NUP)</th>
-                        <th class="p-3 text-left">Jenis</th>
-                        <th class="p-3 text-left">Deskripsi</th>
-                        <th class="p-3 text-left">Prioritas</th>
-                        <th class="p-3 text-left">Tanggal</th>
-                        <th class="p-3 text-left">Status</th>
-                        <th class="p-3 text-center">Aksi</th>
-                    </tr>
-                </thead>
+        {{-- ================= TABEL ================= --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
 
-                <tbody class="text-gray-800">
+            <div class="overflow-x-auto">
 
-                @forelse($laporan as $item)
-                    <tr class="border-b hover:bg-gray-50 align-top">
+                <table class="min-w-full text-sm">
 
-                        <td class="p-3">{{ $item->id_laporan }}</td>
+                    <thead class="bg-gray-200 text-gray-800 sticky top-0">
 
-                        <td class="p-3">
-                            {{ $item->user->name ?? '-' }}
-                        </td>
+                        <tr>
 
-                        <td class="p-3">
-                            <div class="font-semibold">
-                                {{ $item->barang->nup ?? '-' }}
-                            </div>
-                            <div class="text-xs text-gray-500">
-                                {{ $item->barang->nama_barang ?? '' }}
-                            </div>
-                            <div class="text-xs text-gray-400">
-                                {{ $item->barang->lokasi_ruang ?? '' }}
-                            </div>
-                        </td>
+                            <th class="p-3 text-center whitespace-nowrap">ID</th>
+                            <th class="p-3 text-center whitespace-nowrap">Pelapor</th>
+                            <th class="p-3 text-center whitespace-nowrap">Barang</th>
+                            <th class="p-3 text-center whitespace-nowrap">Jenis</th>
+                            <th class="p-3 text-center whitespace-nowrap">Deskripsi</th>
+                            <th class="p-3 text-center whitespace-nowrap">Prioritas</th>
+                            <th class="p-3 text-center whitespace-nowrap">Laporan Dibuat</th>
+                            <th class="p-3 text-center whitespace-nowrap">Laporan Selesai</th>
+                            <th class="p-3 text-center whitespace-nowrap">Status</th>
+                            <th class="p-3 text-center whitespace-nowrap">Aksi</th>
 
-                        <td class="p-3">
-                            {{ $item->jenis_kerusakan }}
-                        </td>
+                        </tr>
 
-                        <td class="p-3 max-w-xs whitespace-normal break-words">
-                            {{ $item->deskripsi_keluhan }}
-                        </td>
+                    </thead>
 
-                        <td class="p-3">
-                            <span class="px-2 py-1 rounded text-xs font-semibold
-                                @if($item->prioritas == 'High') bg-red-500 text-white
-                                @elseif($item->prioritas == 'Normal') bg-yellow-500 text-white
-                                @else bg-gray-400 text-white
-                                @endif">
-                                {{ $item->prioritas }}
-                            </span>
-                        </td>
 
-                        <td class="p-3">
-                            {{ \Carbon\Carbon::parse($item->tanggal_lapor)->format('d M Y') }}
-                        </td>
+                    <tbody class="text-gray-800">
 
-                        <td class="p-3 font-semibold">
-                            @if($item->status_laporan === 'MENUNGGU_REVIEW_ADMIN')
-                                <span class="text-yellow-600">
-                                    Menunggu Review Admin
-                                </span>
-                            @elseif($item->status_laporan === 'MENUNGGU_KEPUTUSAN_KASUBAG')
-                                <span class="text-blue-600">
-                                    Menunggu Keputusan Kasubag
-                                </span>
-                            @elseif($item->status_laporan === 'SELESAI')
-                                <span class="text-green-600">
-                                    Selesai
-                                </span>
-                            @elseif($item->status_laporan === 'DITOLAK')
-                                <span class="text-red-600">
-                                    Ditolak
-                                </span>
-                            @endif
-                        </td>
+                        @forelse ($laporan as $item)
 
-                        {{-- ================= KOLOM AKSI UPDATED ================= --}}
-                        <td class="p-3 space-y-2">
+                            <tr class="border-b hover:bg-gray-50 align-top">
 
-                            {{-- TOMBOL DETAIL --}}
-                            <a href="{{ route('admin.laporan.show', $item->id_laporan) }}"
-                               class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm block text-center">
-                                Detail
-                            </a>
+                                <td class="p-3 text-center whitespace-nowrap">
+                                    {{ $item->id_laporan }}
+                                </td>
 
-                            {{-- FORM VERIFIKASI --}}
-                            @if($item->status_laporan === 'MENUNGGU_REVIEW_ADMIN')
+                                <td class="p-3 whitespace-nowrap">
+                                    {{ $item->user?->name ?? '-' }}
+                                </td>
 
-                                <form method="POST"
-                                      action="{{ route('admin.laporan.verifikasi',$item->id_laporan) }}"
-                                      class="space-y-2">
-                                    @csrf
+                                <td class="p-3">
 
-                                    <select name="status_admin"
-                                            required
-                                            class="w-full border rounded p-1 text-black text-sm">
-                                        <option value="">-- Pilih Rekomendasi --</option>
-                                        <option value="REKOMENDASI_SERVIS_INTERNAL">
-                                            Servis Internal
-                                        </option>
-                                        <option value="REKOMENDASI_SERVIS_EKSTERNAL">
-                                            Servis Eksternal
-                                        </option>
-                                        <option value="REKOMENDASI_GANTI_BARU">
-                                            Ganti Baru
-                                        </option>
-                                        <option value="DITOLAK_ADMIN">
-                                            Tolak Laporan
-                                        </option>
-                                    </select>
+                                    <div class="font-semibold">
+                                        {{ $item->barang?->nup ?? '-' }}
+                                    </div>
 
-                                    <textarea name="keputusan_admin"
-                                              class="w-full border rounded p-1 text-black text-sm"
-                                              placeholder="Catatan admin (opsional)"></textarea>
+                                    <div class="text-xs text-gray-500">
+                                        {{ $item->barang?->nama_barang ?? '' }}
+                                    </div>
 
-                                    <button type="submit"
-                                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm w-full">
-                                        Kirim ke Kasubag
-                                    </button>
-                                </form>
+                                    <div class="text-xs text-gray-400">
+                                        {{ $item->barang?->lokasi_ruang ?? '' }}
+                                    </div>
 
-                            @elseif($item->status_laporan === 'SELESAI')
+                                </td>
 
-                                <span class="text-green-600 font-bold text-sm block text-center">
-                                    ✔ Sudah Ditangani
-                                </span>
+                                <td class="p-3 text-center whitespace-nowrap">
+                                    {{ $item->jenis_kerusakan }}
+                                </td>
 
-                            @elseif($item->status_laporan === 'DITOLAK')
+                                <td class="p-3 max-w-xs break-words">
+                                    {{ $item->deskripsi_keluhan }}
+                                </td>
 
-                                <span class="text-red-600 font-bold text-sm block text-center">
-                                    ✖ Ditolak
-                                </span>
+                                <td class="p-3 text-center">
 
-                            @endif
+                                    <span class="
+                                        px-3 py-1 rounded-full text-xs font-semibold
+                                        @if($item->prioritas === 'TINGGI') bg-red-100 text-red-700
+                                        @elseif($item->prioritas === 'SEDANG') bg-yellow-100 text-yellow-700
+                                        @else bg-green-100 text-green-700
+                                        @endif">
 
-                        </td>
-                        {{-- ====================================================== --}}
+                                        {{ $item->prioritas }}
 
-                    </tr>
+                                    </span>
 
-                @empty
-                    <tr>
-                        <td colspan="9"
-                            class="text-center p-6 text-gray-500">
-                            Belum ada laporan masuk
-                        </td>
-                    </tr>
-                @endforelse
+                                </td>
 
-                </tbody>
+                                <td class="p-3 text-center whitespace-nowrap">
+                                    {{ $item->created_at?->format('d M Y H:i') }}
+                                </td>
 
-            </table>
+                                <td class="p-3 text-center whitespace-nowrap">
+
+                                    @if($item->tanggal_selesai)
+
+                                        {{ \Carbon\Carbon::parse($item->tanggal_selesai)->format('d M Y H:i') }}
+
+                                    @else
+
+                                        -
+
+                                    @endif
+
+                                </td>
+
+                                <td class="p-3 font-semibold text-center whitespace-nowrap">
+
+                                    @switch($item->status_laporan)
+
+                                        @case('MENUNGGU_REVIEW_ADMIN')
+                                            <span class="text-yellow-600">Menunggu Review Admin</span>
+                                        @break
+
+                                        @case('MENUNGGU_KEPUTUSAN_KASUBAG')
+                                            <span class="text-blue-600">Menunggu Keputusan Kasubag</span>
+                                        @break
+
+                                        @case('DIKIRIM_VENDOR')
+                                            <span class="text-purple-600">Sedang Diservis</span>
+                                        @break
+
+                                        @case('MENUNGGU_PENGADAAN')
+                                            <span class="text-indigo-600">Menunggu Pengadaan</span>
+                                        @break
+
+                                        @case('SELESAI')
+                                            <span class="text-green-600">Selesai</span>
+                                        @break
+
+                                        @case('DITOLAK')
+                                            <span class="text-red-600">Ditolak</span>
+                                        @break
+
+                                    @endswitch
+
+                                </td>
+
+
+                                <td class="p-3 space-y-2 text-center">
+
+                                    <a href="{{ route('admin.laporan.show', $item->id_laporan) }}"
+                                    class="block px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700">
+                                        Detail
+                                    </a>
+
+                                    <a href="{{ route('admin.laporan.edit', $item->id_laporan) }}"
+                                    class="block px-3 py-1 text-sm text-white bg-indigo-500 rounded hover:bg-indigo-600">
+                                        Edit
+                                    </a>
+
+                                    {{-- TOMBOL SELESAIKAN --}}
+                                    @if($item->status_laporan === 'DIKIRIM_VENDOR' || $item->status_laporan === 'MENUNGGU_PENGADAAN')
+
+                                        <form method="POST"
+                                            action="{{ route('admin.laporan.selesai', $item->id_laporan) }}">
+
+                                            @csrf
+
+                                            <button type="submit"
+                                                    class="w-full px-3 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700">
+
+                                                Selesaikan
+
+                                            </button>
+
+                                        </form>
+
+                                    @endif
+
+                                </td>
+
+                            </tr>
+
+                        @empty
+
+                            <tr>
+
+                                <td colspan="10"
+                                    class="p-6 text-center text-gray-500">
+
+                                    Belum ada laporan masuk
+
+                                </td>
+
+                            </tr>
+
+                        @endforelse
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
         </div>
 
 
-        {{-- ================= PAGINATION ================= --}}
         <div class="mt-6">
+
             {{ $laporan->links() }}
+
         </div>
-        {{-- ============================================= --}}
 
     </div>
+
 </x-app-layout>

@@ -1,134 +1,154 @@
-<x-app-layout>
+@extends('layouts.pegawai')
 
-<div class="max-w-7xl mx-auto p-6">
+@section('content')
 
-    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-        Laporan Saya
-    </h2>
+<div class="max-w-6xl mx-auto">
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+            Laporan Saya
+        </h1>
 
-        <table class="min-w-full text-sm">
-            
-            <thead class="bg-gray-100 dark:bg-gray-700 
-                           text-gray-700 dark:text-gray-200 
-                           uppercase text-xs tracking-wider">
-                <tr>
-                    <th class="px-6 py-4 text-left">Jenis</th>
-                    <th class="px-6 py-4 text-left">Prioritas</th>
-                    <th class="px-6 py-4 text-left">Tanggal</th>
-                    <th class="px-6 py-4 text-left">Status</th>
-                    <th class="px-6 py-4 text-left">Hasil Penanganan</th>
-                </tr>
-            </thead>
+    </div>
 
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
-            @forelse($laporan as $item)
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm table-auto bg-white rounded shadow">
 
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <tr>
+                        <th class="p-3 text-center">ID</th>
+                        <th class="p-3 text-center">Pelapor</th>
+                        <th class="p-3 text-center">NUP</th>
+                        <th class="p-3 text-center">Barang</th>
+                        <th class="p-3 text-center">Jenis</th>
+                        <th class="p-3 text-center">Deskripsi</th>
+                        <th class="p-3 text-center">Prioritas</th>
+                        <th class="p-3 text-center">Laporan Dibuat</th>
+                        <th class="p-3 text-center">Laporan Selesai</th>
+                        <th class="p-3 text-center">Status</th>
+                    </tr>
+                </thead>
 
-                    {{-- JENIS --}}
-                    <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">
-                        {{ $item->jenis_kerusakan }}
-                    </td>
+                <tbody class="divide-y divide-gray-100">
 
-                    {{-- PRIORITAS --}}
-                    <td class="px-6 py-4">
-                        <span class="
-                            px-3 py-1 rounded-full text-xs font-semibold
-                            @if($item->prioritas === 'High') bg-red-500 text-white
-                            @elseif($item->prioritas === 'Normal') bg-yellow-400 text-black
-                            @else bg-green-500 text-white
-                            @endif">
-                            {{ $item->prioritas }}
-                        </span>
-                    </td>
+                @forelse($laporan as $item)
 
-                    {{-- TANGGAL --}}
-                    <td class="px-6 py-4 text-gray-600 dark:text-gray-300">
-                        {{ \Carbon\Carbon::parse($item->tanggal_lapor)->format('d M Y') }}
-                    </td>
+                    <tr class="hover:bg-gray-50 transition">
 
-                    {{-- STATUS --}}
-                    <td class="px-6 py-4">
+                        {{-- ID --}}
+                        <td class="px-6 py-4 font-semibold text-gray-700">
+                            {{ $item->id_laporan }}
+                        </td>
 
-                        <span class="
-                            px-3 py-1 rounded-full text-xs font-semibold
-                            @if(in_array($item->status_laporan,
-                                ['MENUNGGU_REVIEW_ADMIN','MENUNGGU_KEPUTUSAN_KASUBAG']))
-                                bg-yellow-500 text-black
-                            @elseif($item->status_laporan === 'SELESAI')
-                                bg-green-600 text-white
-                            @else
-                                bg-red-600 text-white
-                            @endif
-                        ">
+                        {{-- PELAPOR --}}
+                        <td class="px-6 py-4 font-semibold text-gray-700">
+                            {{ $item->user->name ?? '-' }}
+                        </td>
 
-                        @if(in_array($item->status_laporan,
-                            ['MENUNGGU_REVIEW_ADMIN','MENUNGGU_KEPUTUSAN_KASUBAG']))
-                            Sedang Diproses
-                        @elseif($item->status_laporan === 'SELESAI')
-                            Selesai
+                        {{-- NUP --}}
+                        <td class="px-6 py-4 font-semibold text-gray-700 text-center">
+                            {{ $item->barang->nup ?? '-' }}
+                        </td>
+
+                        {{-- BARANG --}}
+                        <td class="px-6 py-4">
+                            <div class="font-semibold text-gray-800">
+                                {{ $item->barang->nama_barang ?? '-' }}
+                            </div>  
+                            <div class="text-xs text-gray-500">
+                                {{ $item->barang->lokasi_ruang ?? '-' }}
+
+                        </td>
+
+                        {{-- JENIS --}}
+                        <td class="px-6 py-4 text-gray-700 text-center">
+                            {{ $item->jenis_kerusakan }}
+                        </td>
+
+                        {{-- DESKRIPSI --}}
+                        <td class="p-3 max-w-xs break-words">
+                            {{ $item->deskripsi_keluhan }}
+                        </td>
+
+
+                        {{-- PRIORITAS --}}
+                        <td class="px-6 py-4 text-center">
+                            <span class="
+                                px-3 py-1 rounded-full text-xs font-semibold
+                                @if($item->prioritas === 'TINGGI') bg-red-100 text-red-700
+                                @elseif($item->prioritas === 'SEDANG') bg-yellow-100 text-yellow-700
+                                @else bg-green-100 text-green-700
+                                @endif">
+                                {{ $item->prioritas }}
+                            </span>
+                        </td>
+
+                        {{-- LAPORAN DIBUAT --}}
+                        <td class="p-3 text-center">
+                        {{ $item->created_at ? $item->created_at->format('d M Y H:i') : '-' }}
+                        </td>
+
+                        {{-- LAPORAN SELESAI --}}
+                        <td class="p-3 text-center">
+
+                        @if($item->tanggal_selesai)
+                        {{ \Carbon\Carbon::parse($item->tanggal_selesai)->format('d M Y H:i') }}
                         @else
-                            Ditolak
+                        -
                         @endif
 
-                        </span>
+                        </td>
 
-                    </td>
+                        {{-- STATUS --}}
+                        <td class="p-3 font-semibold">
 
-                    {{-- HASIL PENANGANAN --}}
-                    <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
+                        @switch($item->status_laporan)
 
-                        @if($item->status_laporan === 'MENUNGGU_REVIEW_ADMIN')
-                            Menunggu pemeriksaan Tim IT
+                        @case('MENUNGGU_REVIEW_ADMIN')
+                        <span class="text-yellow-600">Menunggu Review Admin</span>
+                        @break
 
-                        @elseif($item->status_laporan === 'MENUNGGU_KEPUTUSAN_KASUBAG')
-                            Dalam persetujuan Kasubag
+                        @case('MENUNGGU_KEPUTUSAN_KASUBAG')
+                        <span class="text-blue-600">Menunggu Keputusan Kasubag</span>
+                        @break
 
-                        @elseif($item->status_laporan === 'DITOLAK')
-                            Laporan ditolak
+                        @case('DIKIRIM_VENDOR')
+                        <span class="text-purple-600">Sedang Diservis</span>
+                        @break
 
-                        @elseif($item->status_laporan === 'SELESAI')
+                        @case('MENUNGGU_PENGADAAN')
+                        <span class="text-indigo-600">Menunggu Pengadaan</span>
+                        @break
 
-                            @switch($item->status_kasubag)
+                        @case('SELESAI')
+                        <span class="text-green-600">Selesai</span>
+                        @break
 
-                                @case('DISETUJUI_SERVIS_INTERNAL')
-                                    Sedang diperbaiki (Internal)
-                                    @break
+                        @case('DITOLAK')
+                        <span class="text-red-600">Ditolak</span>
+                        @break
 
-                                @case('DISETUJUI_SERVIS_EKSTERNAL')
-                                    Service Eksternal
-                                    @break
+                        @endswitch
 
-                                @case('DISETUJUI_GANTI_BARU')
-                                    Diganti Baru
-                                    @break
+                        </td>
 
-                                @default
-                                    Selesai
-                            @endswitch
+                       
+                    </tr>
 
-                        @else
-                            -
-                        @endif
+                @empty
+                    <tr>
+                        <td colspan="7"
+                            class="px-6 py-10 text-center text-gray-500">
+                            Belum ada laporan dibuat.
+                        </td>
+                    </tr>
+                @endforelse
 
-                    </td>
-
-                </tr>
-
-            @empty
-                <tr>
-                    <td colspan="5"
-                        class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                        Belum ada laporan yang dibuat.
-                    </td>
-                </tr>
-            @endforelse
-
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="mt-6">
@@ -137,4 +157,4 @@
 
 </div>
 
-</x-app-layout>
+@endsection
